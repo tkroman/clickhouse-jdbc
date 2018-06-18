@@ -670,7 +670,7 @@ public class ClickHouseStatementImpl implements ClickHouseStatement {
             if (properties.isCompress()) {
                 try {
                     messageStream = new ClickHouseLZ4Stream(new ByteArrayInputStream(bytes));
-                    bytes = StreamUtils.toByteArray(messageStream);
+                    bytes = StreamUtils.toByteArray(messageStream, true);
                 } catch (IOException e) {
                     log.warn("error while read compressed stream" + e.getMessage());
                 }
