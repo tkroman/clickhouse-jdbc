@@ -1,18 +1,21 @@
 package ru.yandex.clickhouse;
 
 
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.testng.annotations.Test;
-import ru.yandex.clickhouse.settings.ClickHouseProperties;
-
+import java.io.ByteArrayInputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.Properties;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
+import org.apache.commons.codec.Charsets;
+import org.apache.http.HttpVersion;
+import org.apache.http.entity.BasicHttpEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicHttpResponse;
+import org.apache.http.message.BasicStatusLine;
+import org.testng.annotations.Test;
+import ru.yandex.clickhouse.settings.ClickHouseProperties;
+import static org.testng.Assert.*;
 
 
 public class ClickHouseStatementTest {
@@ -64,5 +67,29 @@ public class ClickHouseStatementTest {
         URI uri = statement.buildRequestUri(null, null, null, false);
         String query = uri.getQuery();
         assertTrue(query.contains("max_memory_usage=41"), "max_memory_usage param is missing in URL");
+    }
+
+    @Test
+    void testCheckForErrorAndThrow() {
+        ByteArrayInputStream in = new ByteArrayInputStream("ok\u0015ok".getBytes(Charsets.UTF_8));
+        BasicHttpEntity entity = new BasicHttpEntity();
+        entity.setContent(in);
+        ClickHouseProperties properties = new ClickHouseProperties();
+
+        try {
+            ClickHouseStatementImpl.checkForErrorAndThrow(
+                    entity,
+                    new BasicHttpResponse(
+                            new BasicStatusLine(
+                                    HttpVersion.HTTP_1_1,
+                                    HttpURLConnection.HTTP_BAD_REQUEST,
+                                    "something something fake error"
+                            )
+                    ),
+                    properties
+            );
+        } catch (Exception e) {
+            assertEquals(e.getMessage(), "ok_ok");
+        }
     }
 }

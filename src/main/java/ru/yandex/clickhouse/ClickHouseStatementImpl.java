@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Strings;
 import org.apache.http.HttpEntity;
@@ -505,7 +506,7 @@ public class ClickHouseStatementImpl implements ClickHouseStatement {
         try {
             HttpResponse response = client.execute(post);
             entity = response.getEntity();
-            checkForErrorAndThrow(entity, response);
+            checkForErrorAndThrow(entity, response, properties);
 
             InputStream is;
             if (entity.isStreaming()) {
@@ -649,7 +650,7 @@ public class ClickHouseStatementImpl implements ClickHouseStatement {
             }
             HttpResponse response = client.execute(httpPost);
             entity = response.getEntity();
-            checkForErrorAndThrow(entity, response);
+            checkForErrorAndThrow(entity, response, properties);
         } catch (ClickHouseException e) {
             throw e;
         } catch (Exception e) {
@@ -659,7 +660,10 @@ public class ClickHouseStatementImpl implements ClickHouseStatement {
         }
     }
 
-    private void checkForErrorAndThrow(HttpEntity entity, HttpResponse response) throws IOException, ClickHouseException {
+    @VisibleForTesting
+    static void checkForErrorAndThrow(HttpEntity entity,
+                                      HttpResponse response,
+                                      ClickHouseProperties properties) throws IOException, ClickHouseException {
         if (response.getStatusLine().getStatusCode() != HttpURLConnection.HTTP_OK) {
             InputStream messageStream = entity.getContent();
             byte[] bytes = StreamUtils.toByteArray(messageStream);
