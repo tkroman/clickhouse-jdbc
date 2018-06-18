@@ -32,14 +32,14 @@
 
 package ru.yandex.clickhouse.util.guava;
 
-import java.io.*;
-import java.nio.charset.Charset;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.yandex.clickhouse.util.Utils;
 
+import java.io.*;
+import java.nio.charset.Charset;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class StreamUtils {
     private static final Logger log = LoggerFactory.getLogger(Utils.class);
@@ -52,25 +52,16 @@ public class StreamUtils {
     }
 
     public static byte[] toByteArray(InputStream in) throws IOException {
-        return toByteArray(in, false);
-    }
-
-    public static byte[] toByteArray(InputStream in, boolean asciiOnly) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        copy(in, out, asciiOnly);
+        copy(in, out);
         return out.toByteArray();
     }
 
     public static long copy(InputStream from, OutputStream to) throws IOException {
-        return copy(from, to, false);
-    }
-
-    public static long copy(InputStream from, OutputStream to, boolean asciiOnly) throws IOException {
-        InputStream in = asciiOnly ? new AsciiOnlyInputStream(from) : from;
         byte[] buf = new byte[BUF_SIZE];
         long total = 0;
         while (true) {
-            int r = in.read(buf);
+            int r = from.read(buf);
             if (r == -1) {
                 break;
             }
@@ -99,27 +90,6 @@ public class StreamUtils {
             rs.close();
         } catch (SQLException e) {
             log.error("can not close resultset: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Filters only ASCII-printable characters, replaces other by '_'
-     */
-    private static class AsciiOnlyInputStream extends FilterInputStream {
-        public AsciiOnlyInputStream(InputStream in) {
-            super(in);
-        }
-
-        @Override
-        public int read() throws IOException {
-            int nextByte = super.read();
-            if (nextByte == -1) {
-                return nextByte;
-            } else if (nextByte >= 32 && nextByte < 127) {
-                return nextByte;
-            } else {
-                return '_';
-            }
         }
     }
 }
